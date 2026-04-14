@@ -2,7 +2,7 @@
 @import './tailwind.css';
 @import './theme.css';
 
-/* FitWeather AI Design Tokens */
+/* HeatGuard Design Tokens */
 :root {
   --fw-bg-base: #111110;
   --fw-bg-surface: #1A1916;

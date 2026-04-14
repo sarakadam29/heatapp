@@ -1,11 +1,11 @@
-# 🌤️ STITCH PRODUCTION PROMPT — **FitWeather AI**
+# 🌤️ STITCH PRODUCTION PROMPT — **HeatGuard**
 ### *Outdoor Activity Safety Intelligence Platform*
 
 ---
 
 ## a. PROJECT OVERVIEW
 
-**FitWeather AI** is a web application that uses machine learning to predict whether environmental and personal health conditions make it safe and optimal to perform outdoor physical activity at a chosen time. Users build a personal health profile (age, medical conditions, fitness level, demographic data), then input their planned activity (walking, running, cycling), date/time window, and location. The ML engine returns a Safety Score (0–100), a Go / Caution / Avoid verdict, and detailed reasoning cards breaking down each risk factor. The app visualizes heat index trends, UV exposure, humidity, air quality, and temperature over time via interactive charts. Additional features: 7-day Optimal Windows Planner, Activity History Log, Personalized Hydration & Rest Reminders, Health Risk Heatmap Overlay, Community Check-ins, Weekly Fitness-Weather Report, and Wearable Device Sync Dashboard.
+**HeatGuard** is a web application that uses machine learning to predict whether environmental and personal health conditions make it safe and optimal to perform outdoor physical activity at a chosen time. Users build a personal health profile (age, medical conditions, fitness level, demographic data), then input their planned activity (walking, running, cycling), date/time window, and location. The ML engine returns a Safety Score (0–100), a Go / Caution / Avoid verdict, and detailed reasoning cards breaking down each risk factor. The app visualizes heat index trends, UV exposure, humidity, air quality, and temperature over time via interactive charts. Additional features: 7-day Optimal Windows Planner, Activity History Log, Personalized Hydration & Rest Reminders, Health Risk Heatmap Overlay, Community Check-ins, Weekly Fitness-Weather Report, and Wearable Device Sync Dashboard.
 
 ---
 
@@ -282,7 +282,7 @@ Bottom nav switches between all 5 screens. Active tab shows gold circle behind i
 - Score ring: stroke animation on mount
 - Charts: `animationBegin: 0, animationDuration: 1000`
 - Bottom nav active icon: scale + gold bg transition `200ms`
-- Gradient text on "FitWeather AI" wordmark: `linear-gradient(135deg, #E8B94F, #F5EDD8)`
+- Gradient text on "HeatGuard" wordmark: `linear-gradient(135deg, #E8B94F, #F5EDD8)`
 
 **Step 10 — Responsive**
 On desktop: center the 430px app column with the remaining viewport showing a subtle warm grain texture background (`noise.svg` overlay at 3% opacity over `#0D0C0A`).

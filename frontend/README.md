@@ -1,6 +1,6 @@
-# FitWeather AI — Adaptive Heat Safety Assistant
+# HeatGuard — Adaptive Heat Safety Assistant
 
-FitWeather AI is a high-performance web application designed to protect outdoor enthusiasts and workers from heat-related illness. It combines real-time weather analytics with a personalized risk-assessment algorithm.
+HeatGuard is a high-performance web application designed to protect outdoor enthusiasts and workers from heat-related illness. It combines real-time weather analytics with a personalized risk-assessment algorithm.
 
 ## 🚀 Hackathon Requirement Fulfillment
 

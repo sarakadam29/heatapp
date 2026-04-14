@@ -53,12 +53,12 @@ const DEFAULT_USER: UserProfile = {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem("fitweather_profile");
+    const saved = localStorage.getItem("HeatGuard_profile");
     return saved ? JSON.parse(saved) : DEFAULT_USER;
   });
 
   const [history, setHistory] = useState<ActivityItem[]>(() => {
-    const saved = localStorage.getItem("fitweather_history");
+    const saved = localStorage.getItem("HeatGuard_history");
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -117,14 +117,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const saveProfile = () => {
-    localStorage.setItem("fitweather_profile", JSON.stringify(user));
+    localStorage.setItem("heatguard_profile", JSON.stringify(user));
   };
 
   const addToHistory = (activity: Omit<ActivityItem, "id">) => {
     const newItem = { ...activity, id: Date.now() };
     const newHistory = [newItem, ...history];
     setHistory(newHistory);
-    localStorage.setItem("fitweather_history", JSON.stringify(newHistory));
+    localStorage.setItem("heatguard_history", JSON.stringify(newHistory));
   };
 
   const getRisk = (activity: string, timeStr: string): RiskResult | null => {

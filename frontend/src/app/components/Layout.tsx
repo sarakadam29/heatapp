@@ -45,7 +45,7 @@ export function Layout() {
               backgroundClip: "text",
             }}
           >
-            FitWeather AI
+            HeatGuard
           </h1>
         </div>
         

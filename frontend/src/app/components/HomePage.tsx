@@ -194,7 +194,7 @@ export function HomePage() {
             marginBottom: "2px",
           }}
         >
-          FitWeather AI
+          HeatGuard
         </h1>
         <p style={{ fontSize: "13px", color: "#9A9080" }}>
           {format(currentDate, "EEEE, MMMM d, yyyy")}
