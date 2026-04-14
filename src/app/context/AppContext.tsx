@@ -36,6 +36,7 @@ interface AppContextType {
   weather: WeatherData | null;
   loading: boolean;
   getRisk: (activity: string, timeStr: string) => RiskResult | null;
+  coords: { lat: number; lon: number };
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -63,6 +64,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [coords, setCoords] = useState({ lat: 28.61, lon: 77.23 });
 
   useEffect(() => {
     const init = async () => {
@@ -90,6 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const pos = await getPosition();
           lat = pos.coords.latitude;
           lon = pos.coords.longitude;
+          setCoords({ lat, lon });
           
           // Step 2: Get Location Name
           locationName = await reverseGeocode(lat, lon);
@@ -151,7 +154,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{ 
       user, setUser, history, addToHistory, saveProfile, 
-      weather, loading, getRisk 
+      weather, loading, getRisk, coords
     }}>
       {children}
     </AppContext.Provider>
