@@ -1,21 +1,21 @@
-import { createBrowserRouter } from "react-router";
-import { Layout } from "./components/Layout";
-import { HomePage } from "./components/HomePage";
-import { PredictPage } from "./components/PredictPage";
-import { MapPage } from "./components/MapPage";
-import { HistoryPage } from "./components/HistoryPage";
-import { ProfilePage } from "./components/ProfilePage";
+import { createBrowserRouter } from "react-router-dom";
+import Layout from "./components/Layout";
+import { InputScreen } from "./screens/InputScreen";
+import { ResultsScreen } from "./screens/ResultsScreen";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: Layout,
+    element: <Layout />,
     children: [
-      { index: true, Component: HomePage },
-      { path: "predict", Component: PredictPage },
-      { path: "map", Component: MapPage },
-      { path: "history", Component: HistoryPage },
-      { path: "profile", Component: ProfilePage },
+      {
+        index: true,
+        element: <InputScreen />,
+      },
+      {
+        path: "results",
+        element: <ResultsScreen />,
+      },
     ],
   },
 ]);
