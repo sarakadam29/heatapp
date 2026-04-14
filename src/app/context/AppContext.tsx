@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { fetchWeather, WeatherData } from "../services/weatherApi";
+import { computeHeatRisk, RiskResult } from "../services/heatRiskEngine";
 
-interface UserProfile {
+export interface UserProfile {
   name: string;
   location: string;
   age: number;
@@ -31,6 +33,9 @@ interface AppContextType {
   history: ActivityItem[];
   addToHistory: (activity: Omit<ActivityItem, "id">) => void;
   saveProfile: () => void;
+  weather: WeatherData | null;
+  loading: boolean;
+  getRisk: (activity: string, timeStr: string) => RiskResult | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -56,19 +61,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    // Basic geolocation detection
-    if (user.location === "Detecting...") {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          // In a real app, we'd reverse geocode. For now, we'll just set it.
-          setUser(prev => ({ ...prev, location: "Current Location" }));
-        },
-        () => {
+    // Basic geolocation detection & Weather fetching
+    const init = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchWeather();
+        setWeather(data);
+        
+        if (user.location === "Detecting...") {
           setUser(prev => ({ ...prev, location: "New Delhi, India" }));
         }
-      );
-    }
+      } catch (err) {
+        console.error("Weather fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const saveProfile = () => {
@@ -82,8 +95,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem("fitweather_history", JSON.stringify(newHistory));
   };
 
+  const getRisk = (activity: string, timeStr: string): RiskResult | null => {
+    if (!weather) return null;
+
+    // Find closest index in 24hr forecast
+    // Simplified: timeStr is 5am, 6am... mapping to indices 5, 6...
+    let hour = parseInt(timeStr.replace(/[^0-9]/g, ""));
+    const isPm = timeStr.toLowerCase().includes("pm");
+    if (isPm && hour < 12) hour += 12;
+    if (!isPm && hour === 12) hour = 0;
+
+    const idx = Math.min(23, hour);
+    const data = weather.hourly;
+
+    return computeHeatRisk(
+      data.temperature_2m[idx],
+      data.apparent_temperature[idx],
+      data.relative_humidity_2m[idx],
+      data.uv_index[idx],
+      data.wind_speed_10m[idx],
+      activity,
+      user
+    );
+  };
+
   return (
-    <AppContext.Provider value={{ user, setUser, history, addToHistory, saveProfile }}>
+    <AppContext.Provider value={{ 
+      user, setUser, history, addToHistory, saveProfile, 
+      weather, loading, getRisk 
+    }}>
       {children}
     </AppContext.Provider>
   );

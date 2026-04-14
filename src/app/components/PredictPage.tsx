@@ -161,29 +161,41 @@ const itemVariants = {
 export function PredictPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, addToHistory } = useAppContext();
+  const { user, addToHistory, weather, loading, getRisk } = useAppContext();
   
   const state = (location.state as { activity?: string; time?: string }) || {};
   const activityLabel = state.activity ? (state.activity.charAt(0).toUpperCase() + state.activity.slice(1)) : "Running";
   const timeLabel = state.time || "7:00 AM";
 
-  // Semi-dynamic score calculation
-  const scoreBase = 85;
-  const agePenalty = user.age > 50 ? 15 : user.age > 35 ? 5 : 0;
-  const healthPenalty = user.healthConditions.includes("None") ? 0 : 20;
-  const SCORE = Math.max(10, scoreBase - agePenalty - healthPenalty);
+  // Calculate risk using the decision tree engine
+  const riskResult = useMemo(() => getRisk(state.activity || "run", timeLabel), [getRisk, state.activity, timeLabel]);
   
-  const VERDICT = SCORE > 80 ? "safe" : SCORE > 50 ? "caution" : "danger";
+  if (!riskResult || !weather) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#111110]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-[#E8B94F] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[#9A9080] text-sm">Analyzing thermal patterns...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { score: SCORE, verdict: VERDICT, factors, recommendation } = riskResult;
   const vc = verdictConfig[VERDICT];
 
-  const factors = useMemo(() => [
-    { icon: <Thermometer size={18} />, name: "Temperature", value: "32°C", risk: "moderate", pct: 55 },
-    { icon: <Sun size={18} />, name: "UV Index", value: "8 High", risk: "high", pct: 78 },
-    { icon: <Droplets size={18} />, name: "Humidity", value: "74%", risk: "moderate", pct: 60 },
-    { icon: <Wind size={18} />, name: "Air Quality", value: "142 AQI", risk: "high", pct: 72 },
-    { icon: <User size={18} />, name: "Age Risk", value: `${user.age} yrs`, risk: user.age > 50 ? "high" : user.age > 30 ? "moderate" : "low", pct: Math.min(100, user.age * 1.5) },
-    { icon: <Heart size={18} />, name: "Health Flag", value: user.healthConditions[0], risk: user.healthConditions.includes("None") ? "low" : "high", pct: user.healthConditions.includes("None") ? 10 : 75 },
-  ], [user]);
+  // Map weather data for charts
+  const chartData = useMemo(() => {
+    return weather.hourly.time.slice(5, 22).map((t, i) => {
+      const idx = i + 5;
+      const d = new Date(t);
+      return {
+        time: d.getHours() > 12 ? `${d.getHours() - 12}pm` : `${d.getHours()}am`,
+        temp: Math.round(weather.hourly.temperature_2m[idx]),
+        heat: Math.round(weather.hourly.apparent_temperature[idx]),
+      };
+    });
+  }, [weather]);
 
   const onSaveHistory = () => {
     addToHistory({
@@ -193,9 +205,9 @@ export function PredictPage() {
       time: timeLabel,
       score: SCORE,
       status: VERDICT,
-      temp: "32°C",
-      uv: "8",
-      aqi: "142",
+      temp: `${Math.round(weather.hourly.temperature_2m[0])}°C`, // Simplified
+      uv: `${Math.round(weather.hourly.uv_index[0])}`,
+      aqi: "Live",
       duration: "30 min",
       emoji: state.activity === "walk" ? "🚶" : state.activity === "cycle" ? "🚴" : "🏃"
     });
@@ -315,7 +327,7 @@ export function PredictPage() {
               RISK FACTORS
             </p>
             <div className="flex flex-col gap-2">
-              {factors.map((factor, i) => (
+              {factors.map((factor: any, i: number) => (
                 <motion.div
                   key={factor.name}
                   initial={{ opacity: 0, x: -10 }}
@@ -338,7 +350,11 @@ export function PredictPage() {
                         flexShrink: 0,
                       }}
                     >
-                      {factor.icon}
+                      {factor.name === "Temperature" || factor.name === "Heat Index" ? <Thermometer size={18} /> : 
+                       factor.name === "UV Index" ? <Sun size={18} /> :
+                       factor.name === "Humidity" ? <Droplets size={18} /> :
+                       factor.name === "Age Factor" ? <User size={18} /> :
+                       <Heart size={18} />}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
@@ -406,11 +422,7 @@ export function PredictPage() {
               </p>
             </div>
             <p style={{ fontSize: "14px", color: "#F5EDD8", lineHeight: 1.65, marginTop: "12px" }}>
-              Based on your profile and current conditions, {activityLabel} at {timeLabel}{" "}
-              carries <span style={{ color: vc.color, fontWeight: 700 }}>{VERDICT} risk</span>. 
-              {VERDICT === "safe" ? " It's a great time to exercise! Just stay hydrated." : 
-               VERDICT === "caution" ? " Be careful. UV index is high and humidity is elevated. Reduce intensity and stay hydrated." :
-               " We recommend staying indoors or selecting a different time. Environmental stress is too high."}
+              {recommendation}
             </p>
           </motion.div>
         </div>
@@ -432,7 +444,7 @@ export function PredictPage() {
               TEMPERATURE TIMELINE
             </p>
             <ResponsiveContainer width="100%" height={150}>
-              <LineChart data={tempData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+              <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,248,235,0.05)" />
                 <XAxis
                   dataKey="time"
@@ -477,7 +489,7 @@ export function PredictPage() {
               HEAT INDEX
             </p>
             <ResponsiveContainer width="100%" height={150}>
-              <AreaChart data={tempData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="heatGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#E8B94F" stopOpacity={0.4} />

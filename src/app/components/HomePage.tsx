@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { format } from "date-fns";
@@ -52,11 +52,50 @@ const itemVariants = {
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { user } = useAppContext();
+  const { user, weather, loading, getRisk } = useAppContext();
   const [selectedActivity, setSelectedActivity] = useState(user.defaultActivity.toLowerCase());
   const [selectedTime, setSelectedTime] = useState("7am");
 
   const currentDate = new Date();
+  const currentHour = currentDate.getHours();
+  
+  // Get current metrics from weather data
+  const currentMetrics = useMemo(() => {
+    if (!weather) return { temp: "--", uv: "--", hum: "--", wind: "--" };
+    const h = weather.hourly;
+    return {
+      temp: Math.round(h.temperature_2m[currentHour]),
+      uv: Math.round(h.uv_index[currentHour]),
+      hum: h.relative_humidity_2m[currentHour],
+      wind: Math.round(h.wind_speed_10m[currentHour]),
+    };
+  }, [weather, currentHour]);
+
+  // Compute optimal windows using the algorithm
+  const memoWindows = useMemo(() => {
+    if (!weather) return [];
+    const times = ["7am", "10am", "1pm", "6pm"];
+    return times.map(t => {
+      const risk = getRisk(selectedActivity, t);
+      return {
+        time: t === "7am" ? "6:00 – 8:00 AM" : t === "10am" ? "9:00 – 11:00 AM" : t === "1pm" ? "12:00 – 3:00 PM" : "5:00 – 8:00 PM",
+        status: risk?.verdict || "safe",
+        label: (risk ? (risk.verdict.charAt(0).toUpperCase() + risk.verdict.slice(1)) : "Safe"),
+        score: risk?.score || 100
+      };
+    });
+  }, [weather, selectedActivity, getRisk]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#111110]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-[#E8B94F] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[#9A9080] text-sm animate-pulse">Syncing with satellites...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -210,10 +249,10 @@ export function HomePage() {
                     marginBottom: "6px",
                   }}
                 >
-                  32°C
+                  {currentMetrics.temp}°C
                 </div>
                 <p style={{ fontSize: "16px", color: "#E8B94F", fontWeight: 600 }}>
-                  Partly Cloudy
+                  Live Data
                 </p>
                 <p style={{ fontSize: "13px", color: "#9A9080", marginTop: "2px" }}>
                   {user.location} · Feels like 36°C
@@ -225,9 +264,9 @@ export function HomePage() {
             {/* Data pills row */}
             <div className="flex gap-2 mt-6">
               {[
-                { icon: <Thermometer size={14} />, value: "36°C", label: "Real Feel" },
-                { icon: <Wind size={14} />, value: "12 km/h", label: "Wind" },
-                { icon: <Sun size={14} />, value: "UV 8", label: "Index" },
+                { icon: <Thermometer size={14} />, value: `${currentMetrics.temp}°C`, label: "Temp" },
+                { icon: <Wind size={14} />, value: `${currentMetrics.wind} km/h`, label: "Wind" },
+                { icon: <Sun size={14} />, value: `UV ${currentMetrics.uv}`, label: "Index" },
               ].map((pill) => (
                 <div
                   key={pill.label}
@@ -365,7 +404,7 @@ export function HomePage() {
               TODAY'S OPTIMAL WINDOWS
             </p>
             <div className="flex flex-col gap-5 flex-1 justify-center">
-              {optimalWindows.map((w, i) => (
+              {memoWindows.map((w, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div style={{ width: "100px", flexShrink: 0 }}>
                     <p style={{ fontSize: "12px", color: "#9A9080" }}>{w.time}</p>
@@ -399,10 +438,10 @@ export function HomePage() {
           {/* Stats Row */}
           <motion.div variants={itemVariants} className="flex gap-3">
             {[
-              { icon: <Wind size={18} />, value: "142", label: "AQI", unit: "Unhealthy" },
-              { icon: <Droplets size={18} />, value: "74%", label: "Humidity", unit: "High" },
-              { icon: <Thermometer size={18} />, value: "36°C", label: "Feels Like", unit: "Hot" },
-            ].map((stat) => (
+              { icon: <Wind size={18} />, value: `${currentMetrics.wind}kmh`, label: "Wind", unit: "Outdoor" },
+              { icon: <Droplets size={18} />, value: `${currentMetrics.hum}%`, label: "Humidity", unit: "Relative" },
+              { icon: <Thermometer size={18} />, value: `${currentMetrics.temp}°C`, label: "Actual", unit: "Ambient" },
+            ].map((stat: any) => (
               <div
                 key={stat.label}
                 className="fw-data-pill flex-1 text-center py-4"
